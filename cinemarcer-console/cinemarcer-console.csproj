@@ -6,6 +6,21 @@
         <RootNamespace>cinemarcer_console</RootNamespace>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-    </PropertyGroup>
+      <UserSecretsId>3fc5796c-cb9c-471b-909a-49e6d69fffe8</UserSecretsId>
+  </PropertyGroup>
+
+    <ItemGroup>
+        <Content Include="appsettings.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+    <ItemGroup>
+      <PackageReference Include="google-search-results-dotnet" Version="2.0.1" />
+      <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.10" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.10" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.10" />
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+      <PackageReference Include="SerpClient.Net" Version="0.1.0" />
+    </ItemGroup>
 
 </Project>
