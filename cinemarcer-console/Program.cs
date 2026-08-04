@@ -1,16 +1,15 @@
-﻿// dotnet add package google-search-results-dotnet
-using System.Collections;
+﻿using System.Collections;
 using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json.Linq;
 using SerpApi;
 
 var config = new ConfigurationBuilder()
-    // .SetBasePath(AppContext.BaseDirectory + "/cinmarcer-console/")
+    .SetBasePath(Directory.GetCurrentDirectory())
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddUserSecrets<Program>(true)
     .Build();
 
 
-const string locationName = "Nha Trang"; //todo перевод локации по названию в координаты https://developers.google.com/maps/documentation/geocoding/guides-v3/overview?hl=ru
+const string locationName = "Nha Trang"; //todo (позже) перевод локации по названию в координаты https://developers.google.com/maps/documentation/geocoding/guides-v3/overview?hl=ru
 const string location = "@12.240994,109.196397,15.1z";
 var serpApiKey = config["SerpApiKey"];
 Hashtable ht = new Hashtable();

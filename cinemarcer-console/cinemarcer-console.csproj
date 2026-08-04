@@ -19,6 +19,7 @@
       <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.10" />
       <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.10" />
       <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.10" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.10" />
       <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
       <PackageReference Include="SerpClient.Net" Version="0.1.0" />
     </ItemGroup>
