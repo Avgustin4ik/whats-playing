@@ -1,7 +1,6 @@
-namespace cinemarcer_console;
+namespace cinemarcer_console.parsers.@abstract;
 
-
-public interface IMovieData
+public interface IMovie
 {
     public string Title { get; }
     public string PosterUrl { get; }
@@ -9,4 +8,6 @@ public interface IMovieData
     public DateTime EndDate { get; }
     public DateTime StartDate { get; }
     public string CinemaName { get; }
+    public string City { get; }
+    public string Country { get; }
 }
