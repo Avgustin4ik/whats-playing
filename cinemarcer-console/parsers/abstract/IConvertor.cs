@@ -1,9 +1,10 @@
-namespace cinemarcer_console.parsers.@abstract;
-
-using Newtonsoft.Json.Linq;
-
-public interface IConvertor
+namespace cinemarcer_console.parsers.@abstract
 {
-    public IMovie[] Convert(IGrouping<string?, JToken> json);
-    string KeyName { get; set; }
+    using Newtonsoft.Json.Linq;
+
+    public interface IConvertor
+    {
+        public Movie[] Convert(IGrouping<string?, JToken> json);
+        string Key { get; set; } //website
+    }
 }

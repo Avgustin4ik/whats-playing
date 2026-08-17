@@ -8,7 +8,7 @@ public static class ScrapperStrategy
     public static Dictionary<string, IConvertor> Convertors = new();
     public static void Register(IConvertor convertor)
     {
-        Convertors.Add(convertor.KeyName, convertor);
+        Convertors.Add(convertor.Key, convertor);
     }
     public static void Unregister(IConvertor convertor)
     {

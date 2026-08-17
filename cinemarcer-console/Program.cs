@@ -37,6 +37,10 @@ try
     }
     localTheaters = localTheaters.Where(x => x["title"]?.ToString().StartsWith(CINEMA_NAME) == true);
     var result = ShowtimeAggregator.Aggregate(localTheaters);
+    foreach (var theater in result)
+    {
+        Console.WriteLine(theater.ToString());
+    }
     Console.ReadLine();
 }
 

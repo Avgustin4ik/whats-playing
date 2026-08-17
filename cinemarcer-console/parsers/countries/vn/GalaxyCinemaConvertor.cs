@@ -6,8 +6,7 @@ using Newtonsoft.Json.Linq;
 
 public class GalaxyCinemaConvertor : IConvertor
 {
-    public string KeyName { get; set; } = "https://www.galaxycine.vn/";
-
+    public string Key { get; set; } = "https://www.galaxycine.vn/";
     private static readonly CookieContainer Cookies = new();
     private static readonly HttpClient Http = new(new HttpClientHandler { CookieContainer = Cookies });
     private const string BaseUrl = "https://www.galaxycine.vn";
@@ -41,17 +40,18 @@ public class GalaxyCinemaConvertor : IConvertor
         var json = await response.Content.ReadAsStringAsync();
         var root = JObject.Parse(json);
         _sessions = (JArray)root["data"]!["result"]!;
-        return _sessions;
+        return _sessions; //todo мы должны вернуть только "локальные кинотеатры
     }
 
-    public IMovie[] Convert(IGrouping<string?, JToken> json)
+    public Movie[] Convert(IGrouping<string?, JToken> json)
     {
-        var cinemaName = json.Key ?? string.Empty;
+        //todo жидко и медленно. LINQ на каждый чих
+        var cinemaNames = json.Select(x => x["title"]?.Value<string>() ?? "").ToArray();
         var sessions = GetSessions().Result;
         return sessions
-            .Where(s => s["cinema"]!["name"]!.Value<string>()!
-                .Contains(cinemaName, StringComparison.OrdinalIgnoreCase))
-            .Select(s => (IMovie)new GalaxyMovie(s))
+            .Where(x => cinemaNames.Contains(x["cinema"]!["name"]!.ToString()))
+            .Select(s => new Movie(s))
             .ToArray();
     }
+    
 }
