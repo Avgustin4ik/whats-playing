@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Reflection;
 using cinemarcer_console;
 using cinemarcer_console.parsers;
 using cinemarcer_console.parsers.countries.vn;
@@ -35,12 +36,15 @@ try
     {
         Console.WriteLine(theater);
     }
-    localTheaters = localTheaters.Where(x => x["title"]?.ToString().StartsWith(CINEMA_NAME) == true);
+    localTheaters = localTheaters.Where(x => x["title"]?.ToString().StartsWith(CINEMA_NAME) == true); //временно обрабатываем только один кинотеатр
     var result = ShowtimeAggregator.Aggregate(localTheaters);
     foreach (var theater in result)
     {
         Console.WriteLine(theater.ToString());
     }
+    //здесь мы должны переконвертировать json в красивый MD
+    var filename =  "./example_data/result.md";
+    MdPrinter.Print(result, filename);
     Console.ReadLine();
 }
 

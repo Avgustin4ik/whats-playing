@@ -12,6 +12,9 @@ namespace cinemarcer_console.parsers.@abstract
         public string CinemaName { get;    init; }
         public string City { get;      init;  }
         public string Country { get;      init;  }
+        public DateTime ShowDateTime { get; init; }
+        public int Duration { get; init; }
+        public double Rate { get; init; }
 
         public Movie(string title, string cinemaName, string startDate = "",
             string endDate = "",
@@ -42,6 +45,9 @@ namespace cinemarcer_console.parsers.@abstract
             EndDate = DateTime.Parse(movie["endDate"]!.Value<string>()!);
             CinemaName = cinema["name"]!.Value<string>()!;
             City = cinema["address"]!.Value<string>()!;
+            ShowDateTime = DateTime.Parse($"{movieSession["showDate"]!.Value<string>()} {movieSession["showTime"]!.Value<string>()}");
+            Duration = movie["duration"]?.Value<int>() ?? 0;
+            Rate = movie["rate"]?.Value<double>() ?? 0;
         }
 
         public override string ToString()
