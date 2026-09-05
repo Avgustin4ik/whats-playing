@@ -1,7 +1,6 @@
 namespace cinemarcer_console.parsers;
 
 using @abstract;
-using countries.vn;
 
 public static class ScrapperStrategy
 {

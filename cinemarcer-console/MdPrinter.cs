@@ -35,7 +35,7 @@ public static class MdPrinter
             AppendMovieSection(sb, index++, movie.Title, movie.StartDate, movie.EndDate, movie.PosterUrl, movie.Rows);
         }
 
-        var fullPath = Path.GetPathRoot(filename);
+        var fullPath = Path.GetFullPath(filename);
         var directory = Path.GetDirectoryName(fullPath);
         if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
         Console.WriteLine($"{nameof(GetType)}: Generate and saved: {fullPath}");

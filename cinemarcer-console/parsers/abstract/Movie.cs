@@ -29,8 +29,8 @@ namespace cinemarcer_console.parsers.@abstract
             CinemaName = cinemaName;
             City = city;
             Country = country;
-            if (string.IsNullOrEmpty(startDate)) StartDate = DateTime.Parse(startDate);
-            if (string.IsNullOrEmpty(endDate)) EndDate = DateTime.Parse(endDate);
+            if (!string.IsNullOrEmpty(startDate)) StartDate = DateTime.Parse(startDate);
+            if (!string.IsNullOrEmpty(endDate)) EndDate = DateTime.Parse(endDate);
         }
 
         public Movie(JToken movieSession)

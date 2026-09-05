@@ -13,6 +13,9 @@ var config = new ConfigurationBuilder()
     .Build();
 
 ScrapperStrategy.Register(new GalaxyCinemaConvertor());
+ScrapperStrategy.Register(new CgvCinemaConvertor());
+ScrapperStrategy.Register(new LotteCinemaConvertor());
+ScrapperStrategy.Register(new BetaCinemaConvertor());
 
 const string locationName = "Nha Trang"; //todo (позже) перевод локации по названию в координаты https://developers.google.com/maps/documentation/geocoding/guides-v3/overview?hl=ru
 const string location = "@12.240994,109.196397,15.1z";
