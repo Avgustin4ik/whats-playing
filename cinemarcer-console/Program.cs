@@ -21,7 +21,9 @@ Hashtable ht = new Hashtable();
 ht.Add("engine", "google_maps");
 ht.Add("q", "cinema");
 ht.Add("ll", location);
+// ht.Add("location", locationName);
 ht.Add("type", "search"); 
+//todo add distance in request
 const string MOVIE_THEATER = "Movie theater";
 const string CINEMA_NAME = "Galaxy";//for test
 try
@@ -29,14 +31,11 @@ try
     var search = new GoogleSearch(ht, serpApiKey);
     var data = search.GetJson();
     var localTheaters = data["local_results"].Where(x => x["type"]?.ToString() == MOVIE_THEATER);
-    //todo titles, location (distance from user?), website
-    //todo start with galaxy-cinema. we will got one big JSON. Find actual movies. Build a list of output data. 
     //todo Movie Title, Theatre Name, Location, Website, Show Time, Show Date, Movie Poster
-    foreach (var theater in localTheaters.Select(x => x.Value<string>("title")))
+    foreach (var theater in localTheaters.Select(x => (x.Value<string>("title"), x.Value<string>("website"))))
     {
-        Console.WriteLine(theater);
+        Console.WriteLine($"{theater.Item1} --- {theater.Item2}");
     }
-    localTheaters = localTheaters.Where(x => x["title"]?.ToString().StartsWith(CINEMA_NAME) == true); //временно обрабатываем только один кинотеатр
     var result = ShowtimeAggregator.Aggregate(localTheaters);
     foreach (var theater in result)
     {

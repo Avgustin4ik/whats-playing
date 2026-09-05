@@ -17,7 +17,14 @@ public static class ShowtimeAggregator
         {
             //Call convertor for each cinema
             //choose the best strategy
-            list.AddRange(SeansesScrapper.Scrap(record));
+            try
+            {
+                list.AddRange(SeansesScrapper.Scrap(record));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
         return list;
     }
