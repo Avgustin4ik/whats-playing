@@ -1,10 +1,14 @@
 ﻿using System.Collections;
-using System.Reflection;
 using cinemarcer_console;
 using cinemarcer_console.parsers;
 using cinemarcer_console.parsers.countries.vn;
+using Console.Advanced.Services;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using SerpApi;
+using Microsoft.Extensions.Options;
+using Telegram.Bot;
+using Microsoft.Extensions.Hosting;
 
 var config = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())
@@ -12,46 +16,80 @@ var config = new ConfigurationBuilder()
     .AddUserSecrets<Program>(true)
     .Build();
 
+//todo нужен тг-бот. Это факт.
+//как пользователь будет взаимодействовать с ТГ и сервисом?
+//бот должен собрать данные о местоположении пользователя. 
+//todo узнать как tg передает данные о местоположении пользователя. 
+//вероятно просто попросить "скинуть геолокацию"
+//todo [фича] кнопка "Поделиться локацией" чтобы чтобы не скидывать ее в ручную
+//получив локацию мы должны запарсить ее как location и отправить ShowtimeAggregator. далее работает как обычно
+//ответ мы должны вернуть как сообщение в телеграм.
+//Это приложение должно использоваться как апишка?
+//или просто консольное приложение?
+//но мне нужен будет кеш. Redis для небольшого хранения информации в течении суток
+
+var host = Host.CreateDefaultBuilder(args)
+    .ConfigureServices((context, services) =>
+    {
+        services.Configure<BotConfiguration>(context.Configuration.GetSection("BotConfiguration"));
+        // Register named HttpClient to benefits from IHttpClientFactory and consume it with ITelegramBotClient typed client.
+        // See https://docs.microsoft.com/en-us/aspnet/core/fundamentals/http-requests?view=aspnetcore-5.0#typed-clients
+        services.AddHttpClient("telegram_bot_client").RemoveAllLoggers()
+            .AddTypedClient<ITelegramBotClient>((httpClient, sp) =>
+        // and https://docs.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/use-httpclientfactory-to-implement-resilient-http-requests
+            {
+                BotConfiguration? botConfiguration = sp.GetService<IOptions<BotConfiguration>>()?.Value;
+                ArgumentNullException.ThrowIfNull(botConfiguration);
+                TelegramBotClientOptions options = new(botConfiguration.BotToken);
+                return new TelegramBotClient(options, httpClient);
+            });
+
+        services.AddScoped<UpdateHandler>();
+        services.AddScoped<ReceiverService>();
+        services.AddHostedService<PollingService>();
+    })
+    .Build();
+
+await host.RunAsync();
+
 ScrapperStrategy.Register(new GalaxyCinemaConvertor());
 ScrapperStrategy.Register(new CgvCinemaConvertor());
 ScrapperStrategy.Register(new LotteCinemaConvertor());
 ScrapperStrategy.Register(new BetaCinemaConvertor());
 
-const string locationName = "Nha Trang"; //todo (позже) перевод локации по названию в координаты https://developers.google.com/maps/documentation/geocoding/guides-v3/overview?hl=ru
-const string location = "@12.240994,109.196397,15.1z";
-var serpApiKey = config["SerpApiKey"];
-Hashtable ht = new Hashtable();
-ht.Add("engine", "google_maps");
-ht.Add("q", "cinema");
-ht.Add("ll", location);
-// ht.Add("location", locationName);
-ht.Add("type", "search"); 
-//todo add distance in request
-const string MOVIE_THEATER = "Movie theater";
-const string CINEMA_NAME = "Galaxy";//for test
-try
-{
-    var search = new GoogleSearch(ht, serpApiKey);
-    var data = search.GetJson();
-    var localTheaters = data["local_results"].Where(x => x["type"]?.ToString() == MOVIE_THEATER);
-    //todo Movie Title, Theatre Name, Location, Website, Show Time, Show Date, Movie Poster
-    foreach (var theater in localTheaters.Select(x => (x.Value<string>("title"), x.Value<string>("website"))))
-    {
-        Console.WriteLine($"{theater.Item1} --- {theater.Item2}");
-    }
-    var result = ShowtimeAggregator.Aggregate(localTheaters);
-    foreach (var theater in result)
-    {
-        Console.WriteLine(theater.ToString());
-    }
-    //здесь мы должны переконвертировать json в красивый MD
-    var filename =  "./example_data/result.md";
-    MdPrinter.Print(result, filename);
-    Console.ReadLine();
-}
-
-catch (SerpApiSearchException ex)
-{
-    Console.WriteLine("Exception:");
-    Console.WriteLine(ex.ToString());
-}
+// const string locationName = "Nha Trang"; //todo (позже) перевод локации по названию в координаты https://developers.google.com/maps/documentation/geocoding/guides-v3/overview?hl=ru
+// const string location = "@12.240994,109.196397,15.1z";
+// var serpApiKey = config["SerpApiKey"];
+// Hashtable ht = new Hashtable();
+// ht.Add("engine", "google_maps");
+// ht.Add("q", "cinema");
+// ht.Add("ll", location);
+// ht.Add("type", "search"); 
+// //todo add distance in request
+// const string MOVIE_THEATER = "Movie theater";
+// const string CINEMA_NAME = "Galaxy";//for test
+// try
+// {
+//     var search = new GoogleSearch(ht, serpApiKey);
+//     var data = search.GetJson();
+//     var localTheaters = data["local_results"].Where(x => x["type"]?.ToString() == MOVIE_THEATER);
+//     foreach (var theater in localTheaters.Select(x => (x.Value<string>("title"), x.Value<string>("website"))))
+//     {
+//         Console.WriteLine($"{theater.Item1} --- {theater.Item2}");
+//     }
+//     var result = ShowtimeAggregator.Aggregate(localTheaters);
+//     foreach (var theater in result)
+//     {
+//         Console.WriteLine(theater.ToString());
+//     }
+//     var filename =  "./example_data/result.md";
+//     MdPrinter.Print(result, filename);
+//     //todo Принтер сообщения для Telegram Бота
+//     Console.ReadLine();
+// }
+//
+// catch (SerpApiSearchException ex)
+// {
+//     Console.WriteLine("Exception:");
+//     Console.WriteLine(ex.ToString());
+// }
