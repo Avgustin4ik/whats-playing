@@ -1,7 +1,6 @@
-namespace cinemarcer_console.parsers;
+namespace cinemarcer_console.Movies;
 
-using System.Text.RegularExpressions;
-using @abstract;
+using Abstract;
 using Newtonsoft.Json.Linq;
 
 public static class ShowtimeAggregator

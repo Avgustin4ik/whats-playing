@@ -1,4 +1,4 @@
-namespace Console.Advanced.Abstract;
+namespace cinemarcer_console.Abstract;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

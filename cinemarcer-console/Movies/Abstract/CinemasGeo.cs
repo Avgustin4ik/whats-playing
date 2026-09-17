@@ -1,4 +1,4 @@
-namespace cinemarcer_console.parsers.@abstract
+namespace cinemarcer_console.Movies.Abstract
 {
     public class CinemasGeo
     {

@@ -1,8 +1,7 @@
-namespace cinemarcer_console.parsers.countries.vn;
+namespace cinemarcer_console.Movies.Countries.vn;
 
 using System.Net.Security;
-using System.Security.Authentication;
-using @abstract;
+using Abstract;
 using Newtonsoft.Json.Linq;
 
 public class CgvCinemaConvertor : IConvertor

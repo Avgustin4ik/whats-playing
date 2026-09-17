@@ -1,6 +1,6 @@
-namespace cinemarcer_console.parsers;
+namespace cinemarcer_console.Movies;
 
-using @abstract;
+using Abstract;
 using Newtonsoft.Json.Linq;
 
 public static class SeansesScrapper

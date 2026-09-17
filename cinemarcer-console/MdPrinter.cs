@@ -1,7 +1,7 @@
 namespace cinemarcer_console;
 
 using System.Text;
-using parsers.@abstract;
+using Movies.Abstract;
 
 public static class MdPrinter
 {

@@ -1,6 +1,6 @@
-namespace cinemarcer_console.parsers;
+namespace cinemarcer_console.Movies;
 
-using @abstract;
+using Abstract;
 
 public static class ScrapperStrategy
 {

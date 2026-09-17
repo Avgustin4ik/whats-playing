@@ -1,8 +1,8 @@
 ﻿using System.Collections;
 using cinemarcer_console;
-using cinemarcer_console.parsers;
-using cinemarcer_console.parsers.countries.vn;
-using Console.Advanced.Services;
+using cinemarcer_console.Movies;
+using cinemarcer_console.Movies.Countries.vn;
+using cinemarcer_console.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SerpApi;

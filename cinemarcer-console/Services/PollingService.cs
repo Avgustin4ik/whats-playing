@@ -1,7 +1,6 @@
-using Console.Advanced.Abstract;
+namespace cinemarcer_console.Services;
 
-namespace Console.Advanced.Services;
-
+using Abstract;
 using Microsoft.Extensions.Logging;
 
 // Compose Polling and ReceiverService implementations

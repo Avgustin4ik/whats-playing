@@ -1,4 +1,4 @@
-namespace Console.Advanced.Abstract;
+namespace cinemarcer_console.Abstract;
 
 public interface IReceiverService
 {

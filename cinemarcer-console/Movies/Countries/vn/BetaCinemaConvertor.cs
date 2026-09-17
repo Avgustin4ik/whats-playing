@@ -1,8 +1,8 @@
-namespace cinemarcer_console.parsers.countries.vn;
+namespace cinemarcer_console.Movies.Countries.vn;
 
 using System.Net;
 using System.Text.RegularExpressions;
-using @abstract;
+using Abstract;
 using Newtonsoft.Json.Linq;
 
 public class BetaCinemaConvertor : IConvertor

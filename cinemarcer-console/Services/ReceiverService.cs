@@ -1,9 +1,8 @@
-using Console.Advanced.Abstract;
-using Telegram.Bot;
+namespace cinemarcer_console.Services;
 
-namespace Console.Advanced.Services;
-
+using Abstract;
 using Microsoft.Extensions.Logging;
+using Telegram.Bot;
 
 // Compose Receiver and UpdateHandler implementation
 public class ReceiverService(ITelegramBotClient botClient, UpdateHandler updateHandler, ILogger<ReceiverServiceBase<UpdateHandler>> logger)
