@@ -12,8 +12,6 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 public class UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger) : IUpdateHandler
 {
-    private static readonly InputPollOption[] PollOptions = ["Hello", "World!"];
-
     public async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, HandleErrorSource source, CancellationToken cancellationToken)
     {
         logger.LogInformation("HandleError: {Exception}", exception);
@@ -32,8 +30,6 @@ public class UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger
             { CallbackQuery: { } callbackQuery }            => OnCallbackQuery(callbackQuery),
             { InlineQuery: { } inlineQuery }                => OnInlineQuery(inlineQuery),
             { ChosenInlineResult: { } chosenInlineResult }  => OnChosenInlineResult(chosenInlineResult),
-            { Poll: { } poll }                              => OnPoll(poll),
-            { PollAnswer: { } pollAnswer }                  => OnPollAnswer(pollAnswer),
             // UpdateType.ChannelPost:
             // UpdateType.EditedChannelPost:
             // UpdateType.ShippingQuery:
@@ -45,42 +41,52 @@ public class UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger
     private async Task OnMessage(Message msg)
     {
         logger.LogInformation("Receive message type: {MessageType}", msg.Type);
+        if (msg.Type == MessageType.Location)
+        {
+            OnLocation(msg);
+            return;
+        }
         if (msg.Text is not { } messageText)
             return;
 
-        Message sentMessage = await (messageText.Split(' ')[0] switch
+        var sentMessage = await (messageText.Split(' ')[0] switch
         {
-            "/photo" => SendPhoto(msg),
-            "/inline_buttons" => SendInlineKeyboard(msg),
-            "/keyboard" => SendReplyKeyboard(msg),
-            "/remove" => RemoveKeyboard(msg),
-            "/request" => RequestContactAndLocation(msg),
-            "/inline_mode" => StartInlineQuery(msg),
-            "/poll" => SendPoll(msg),
-            "/poll_anonymous" => SendAnonymousPoll(msg),
-            "/reaction" => SendReaction(msg),
-            "/html" => SendViaHtml(msg),
-            "/throw" => FailingHandler(msg),
+            Commands.MOVIES => GetMoviesData(msg),
+            // "/inline_buttons" => SendInlineKeyboard(msg), //todo need this for location
+            // "/keyboard" => SendReplyKeyboard(msg),
+            // "/request" => RequestLocation(msg), //todo need this for location (maybe)
+            // "/inline_mode" => StartInlineQuery(msg),
             _ => Usage(msg)
         });
         logger.LogInformation("The message was sent with id: {SentMessageId}", sentMessage.Id);
+    }
+
+    private async Task<Message> OnLocation(Message msg)
+    {
+        //todo save user location
+        const string message = """
+                               Локация получена! Ищу кинчики...
+                               """;
+        await bot.SendMessage(msg.Chat, message, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
+        return await GetMoviesData(msg);
+    }
+
+    private Task<Message> GetMoviesData(Message msg)
+    {
+        ///мы знаем локацию юзера?
+        ///если нет - спрашиваем, как только мы получаем его локацию - продолжаем этот метод.
+        ///выполняем сбор фильмов
+        /// todo достаем запрос из кеша по геолокации
+        /// присылаем пользователю результат
+        throw new NotImplementedException();
     }
 
     async Task<Message> Usage(Message msg)
     {
         const string usage = """
                 <b><u>Bot menu</u></b>:
-                /photo          - send a photo
-                /inline_buttons - send inline buttons
-                /keyboard       - send keyboard buttons
-                /remove         - remove keyboard buttons
-                /request        - request location or contact
-                /inline_mode    - send inline-mode results list
-                /poll           - send a poll
-                /poll_anonymous - send an anonymous poll
-                /reaction       - send a reaction
-                /html [html]    - send a message with SendHtml tags
-                /throw          - what happens if handler fails
+                /movies      - aggregate info about movies nearby
+                /location    - tell this bot where to look for cinemas
             """;
         return await bot.SendMessage(msg.Chat, usage, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
     }
@@ -117,12 +123,13 @@ public class UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger
         return await bot.SendMessage(msg.Chat, "Removing keyboard", replyMarkup: new ReplyKeyboardRemove());
     }
 
-    async Task<Message> RequestContactAndLocation(Message msg)
+    async Task<Message> RequestLocation(Message msg)
     {
         var replyMarkup = new ReplyKeyboardMarkup(true)
-            .AddButton(new("Location", requestLocation: true))
-            .AddButton(new("Contact", requestContact: true));
-        return await bot.SendMessage(msg.Chat, "Who or Where are you?", replyMarkup: replyMarkup);
+            .AddButton(new("Location", requestLocation: true));
+        return await bot.SendMessage(msg.Chat, "Where are you?" +
+                                               "I need your location to find what movies in cinemas right now near you"
+            , replyMarkup: replyMarkup);
     }
 
     async Task<Message> StartInlineQuery(Message msg)
@@ -130,16 +137,6 @@ public class UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger
         var button = new InlineKeyboardButton("Inline Mode", InlineButtonType.SwitchInlineQueryCurrentChat);
         return await bot.SendMessage(msg.Chat, "Press the button to start Inline Query\n\n" +
             "(Make sure you enabled Inline Mode in @BotFather)", replyMarkup: new InlineKeyboardMarkup(button));
-    }
-
-    async Task<Message> SendPoll(Message msg)
-    {
-        return await bot.SendPoll(msg.Chat, "Question", PollOptions, isAnonymous: false);
-    }
-
-    async Task<Message> SendAnonymousPoll(Message msg)
-    {
-        return await bot.SendPoll(msg.Chat, "Question", PollOptions);
     }
 
     async Task<Message> SendReaction(Message msg)
@@ -189,19 +186,6 @@ public class UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger
 
     #endregion
 
-    private Task OnPoll(Poll poll)
-    {
-        logger.LogInformation("Received Poll info: {Question}", poll.Question);
-        return Task.CompletedTask;
-    }
-
-    private async Task OnPollAnswer(PollAnswer pollAnswer)
-    {
-        var answer = pollAnswer.OptionIds.FirstOrDefault();
-        var selectedOption = PollOptions[answer];
-        if (pollAnswer.User != null)
-            await bot.SendMessage(pollAnswer.User.Id, $"You've chosen: {selectedOption.Text} in poll");
-    }
 
     private Task UnknownUpdateHandlerAsync(Update update)
     {

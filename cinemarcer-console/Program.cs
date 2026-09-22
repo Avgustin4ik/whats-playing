@@ -1,14 +1,11 @@
-﻿using System.Collections;
-using cinemarcer_console;
-using cinemarcer_console.Movies;
+﻿using cinemarcer_console.Movies;
 using cinemarcer_console.Movies.Countries.vn;
 using cinemarcer_console.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using SerpApi;
-using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Microsoft.Extensions.Hosting;
+using Telegram.Bot.Types;
 
 var config = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())
@@ -27,21 +24,19 @@ var config = new ConfigurationBuilder()
 //Это приложение должно использоваться как апишка?
 //или просто консольное приложение?
 //но мне нужен будет кеш. Redis для небольшого хранения информации в течении суток
-
 var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
     {
-        services.Configure<BotConfiguration>(context.Configuration.GetSection("BotConfiguration"));
-        // Register named HttpClient to benefits from IHttpClientFactory and consume it with ITelegramBotClient typed client.
-        // See https://docs.microsoft.com/en-us/aspnet/core/fundamentals/http-requests?view=aspnetcore-5.0#typed-clients
-        services.AddHttpClient("telegram_bot_client").RemoveAllLoggers()
+        services.AddHttpClient("telegram_bot_client")
+            .RemoveAllLoggers()
             .AddTypedClient<ITelegramBotClient>((httpClient, sp) =>
-        // and https://docs.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/use-httpclientfactory-to-implement-resilient-http-requests
             {
-                BotConfiguration? botConfiguration = sp.GetService<IOptions<BotConfiguration>>()?.Value;
-                ArgumentNullException.ThrowIfNull(botConfiguration);
-                TelegramBotClientOptions options = new(botConfiguration.BotToken);
-                return new TelegramBotClient(options, httpClient);
+                TelegramBotClientOptions options = new(config["BotToken"] ?? "no_token_detected");
+                var botClient = new TelegramBotClient(options, httpClient);
+                botClient.SetMyCommands([
+                    new BotCommand(Commands.MOVIES.TrimStart('/'), "Show me what you got"), 
+                    new BotCommand(Commands.LOCATION.TrimStart('/'),"Give me your location")]);
+                return botClient;
             });
 
         services.AddScoped<UpdateHandler>();
@@ -49,13 +44,11 @@ var host = Host.CreateDefaultBuilder(args)
         services.AddHostedService<PollingService>();
     })
     .Build();
-
-await host.RunAsync();
-
 ScrapperStrategy.Register(new GalaxyCinemaConvertor());
 ScrapperStrategy.Register(new CgvCinemaConvertor());
 ScrapperStrategy.Register(new LotteCinemaConvertor());
 ScrapperStrategy.Register(new BetaCinemaConvertor());
+await host.RunAsync();
 
 // const string locationName = "Nha Trang"; //todo (позже) перевод локации по названию в координаты https://developers.google.com/maps/documentation/geocoding/guides-v3/overview?hl=ru
 // const string location = "@12.240994,109.196397,15.1z";
