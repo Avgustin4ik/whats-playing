@@ -1,16 +1,16 @@
 namespace cinemarcer_console.Services;
 
 using Microsoft.Extensions.Logging;
+using Movies;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
-using Telegram.Bot.Extensions;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.InlineQueryResults;
 using Telegram.Bot.Types.ReplyMarkups;
 
-public class UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger) : IUpdateHandler
+public class UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger, ShowtimeAggregator showtimeAggregator) : IUpdateHandler
 {
     public async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, HandleErrorSource source, CancellationToken cancellationToken)
     {
@@ -43,7 +43,7 @@ public class UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger
         logger.LogInformation("Receive message type: {MessageType}", msg.Type);
         if (msg.Type == MessageType.Location)
         {
-            OnLocation(msg);
+            await OnLocation(msg);
             return;
         }
         if (msg.Text is not { } messageText)
@@ -52,6 +52,7 @@ public class UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger
         var sentMessage = await (messageText.Split(' ')[0] switch
         {
             Commands.MOVIES => GetMoviesData(msg),
+            Commands.LOCATION => GetLocation(msg),
             // "/inline_buttons" => SendInlineKeyboard(msg), //todo need this for location
             // "/keyboard" => SendReplyKeyboard(msg),
             // "/request" => RequestLocation(msg), //todo need this for location (maybe)
@@ -59,6 +60,16 @@ public class UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger
             _ => Usage(msg)
         });
         logger.LogInformation("The message was sent with id: {SentMessageId}", sentMessage.Id);
+    }
+
+    private async Task<Message> GetLocation(Message msg)
+    {
+        //todo ask user to send location
+        const string message = """
+                               Сейчас я умею искать кино только в Нячанге! Другие города в процессе добавления!
+                               """;
+        await bot.SendMessage(msg.Chat, message, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
+        throw new NotImplementedException();
     }
 
     private async Task<Message> OnLocation(Message msg)
@@ -71,14 +82,27 @@ public class UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger
         return await GetMoviesData(msg);
     }
 
-    private Task<Message> GetMoviesData(Message msg)
+    private async Task<Message> GetMoviesData(Message msg)
     {
-        ///мы знаем локацию юзера?
-        ///если нет - спрашиваем, как только мы получаем его локацию - продолжаем этот метод.
-        ///выполняем сбор фильмов
-        /// todo достаем запрос из кеша по геолокации
+        //мы знаем локацию юзера?
+        //если нет - спрашиваем, как только мы получаем его локацию - продолжаем этот метод.
+        if (!UserLocationIsKnown(out string location))
+        {
+            throw new ShowtimeAggregator.UnknownLocationException();
+        }
+
+        var moviesInLocation = showtimeAggregator.GetMoviesInLocation(location);
+        // todo достаем запрос из кеша по геолокации
+        var enumerable = showtimeAggregator.Aggregate(moviesInLocation);
+        var message = TelegramMessagePrinter.Format(enumerable, location);
         /// присылаем пользователю результат
-        throw new NotImplementedException();
+        return await bot.SendMessage(msg.Chat, message, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
+    }
+
+    private bool UserLocationIsKnown(out string s)
+    {
+        s = "@12.240994,109.196397,15.1z"; //todo refactor
+        return true;
     }
 
     async Task<Message> Usage(Message msg)
@@ -89,14 +113,6 @@ public class UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger
                 /location    - tell this bot where to look for cinemas
             """;
         return await bot.SendMessage(msg.Chat, usage, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
-    }
-
-    async Task<Message> SendPhoto(Message msg)
-    {
-        await bot.SendChatAction(msg.Chat, ChatAction.UploadPhoto);
-        await Task.Delay(2000); // simulate a long task
-        await using var fileStream = new FileStream("Files/bot.gif", FileMode.Open, FileAccess.Read);
-        return await bot.SendPhoto(msg.Chat, fileStream, caption: "Read https://telegrambots.github.io/book/");
     }
 
     // Send inline keyboard. You can process responses in OnCallbackQuery handler
@@ -123,6 +139,7 @@ public class UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger
         return await bot.SendMessage(msg.Chat, "Removing keyboard", replyMarkup: new ReplyKeyboardRemove());
     }
 
+    
     async Task<Message> RequestLocation(Message msg)
     {
         var replyMarkup = new ReplyKeyboardMarkup(true)
@@ -137,19 +154,6 @@ public class UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger
         var button = new InlineKeyboardButton("Inline Mode", InlineButtonType.SwitchInlineQueryCurrentChat);
         return await bot.SendMessage(msg.Chat, "Press the button to start Inline Query\n\n" +
             "(Make sure you enabled Inline Mode in @BotFather)", replyMarkup: new InlineKeyboardMarkup(button));
-    }
-
-    async Task<Message> SendReaction(Message msg)
-    {
-        await bot.SetMessageReaction(msg.Chat, msg.Id, ["❤"], false);
-        return msg;
-    }
-
-    async Task<Message> SendViaHtml(Message msg)
-    {
-        var space = msg.Text?.IndexOf(' ') ?? -1;
-        if (space == -1) return await bot.SendMessage(msg.Chat, "Usage: /html [html]");
-        return (await bot.SendHtml(msg.Chat, msg.Text![(space + 1)..]))[0];
     }
 
     static Task<Message> FailingHandler(Message msg)

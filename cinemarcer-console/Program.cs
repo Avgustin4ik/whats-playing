@@ -77,7 +77,6 @@ await host.RunAsync();
 //     }
 //     var filename =  "./example_data/result.md";
 //     MdPrinter.Print(result, filename);
-//     //todo Принтер сообщения для Telegram Бота
 //     Console.ReadLine();
 // }
 //
