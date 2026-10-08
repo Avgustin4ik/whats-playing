@@ -1,7 +1,7 @@
 namespace cinemarcer_console.Services;
 
 using Abstract;
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;using Movies;
 using Telegram.Bot;
 
 // Compose Receiver and UpdateHandler implementation

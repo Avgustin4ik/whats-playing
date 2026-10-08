@@ -30,10 +30,6 @@ public class UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger
             { CallbackQuery: { } callbackQuery }            => OnCallbackQuery(callbackQuery),
             { InlineQuery: { } inlineQuery }                => OnInlineQuery(inlineQuery),
             { ChosenInlineResult: { } chosenInlineResult }  => OnChosenInlineResult(chosenInlineResult),
-            // UpdateType.ChannelPost:
-            // UpdateType.EditedChannelPost:
-            // UpdateType.ShippingQuery:
-            // UpdateType.PreCheckoutQuery:
             _                                               => UnknownUpdateHandlerAsync(update)
         });
     }
@@ -53,10 +49,6 @@ public class UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger
         {
             Commands.MOVIES => GetMoviesData(msg),
             Commands.LOCATION => GetLocation(msg),
-            // "/inline_buttons" => SendInlineKeyboard(msg), //todo need this for location
-            // "/keyboard" => SendReplyKeyboard(msg),
-            // "/request" => RequestLocation(msg), //todo need this for location (maybe)
-            // "/inline_mode" => StartInlineQuery(msg),
             _ => Usage(msg)
         });
         logger.LogInformation("The message was sent with id: {SentMessageId}", sentMessage.Id);
@@ -94,9 +86,26 @@ public class UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger
         var moviesInLocation = showtimeAggregator.GetMoviesInLocation(location);
         // todo достаем запрос из кеша по геолокации
         var enumerable = showtimeAggregator.Aggregate(moviesInLocation);
-        var message = TelegramMessagePrinter.Format(enumerable, location);
+        var result = TelegramMessagePrinter.Build(enumerable, location);
+
+        await SendPosters(msg.Chat, result.PosterUrls);
+
         /// присылаем пользователю результат
-        return await bot.SendMessage(msg.Chat, message, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
+        return await bot.SendMessage(msg.Chat, result.Text, parseMode: ParseMode.MarkdownV2, replyMarkup: new ReplyKeyboardRemove());
+    }
+
+    private async Task SendPosters(Chat chat, IReadOnlyList<string> posterUrls)
+    {
+        if (posterUrls.Count == 0) return;
+
+        // sendMediaGroup caps out at 10 photos per call, so split into multiple albums when there are more.
+        foreach (var chunk in posterUrls.Chunk(10))
+        {
+            if (chunk.Length == 1)
+                await bot.SendPhoto(chat, InputFile.FromUri(chunk[0]));
+            else
+                await bot.SendMediaGroup(chat, chunk.Select(url => new InputMediaPhoto(InputFile.FromUri(url))));
+        }
     }
 
     private bool UserLocationIsKnown(out string s)
