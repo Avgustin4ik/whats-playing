@@ -30,10 +30,6 @@ public class UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger
             { CallbackQuery: { } callbackQuery }            => OnCallbackQuery(callbackQuery),
             { InlineQuery: { } inlineQuery }                => OnInlineQuery(inlineQuery),
             { ChosenInlineResult: { } chosenInlineResult }  => OnChosenInlineResult(chosenInlineResult),
-            // UpdateType.ChannelPost:
-            // UpdateType.EditedChannelPost:
-            // UpdateType.ShippingQuery:
-            // UpdateType.PreCheckoutQuery:
             _                                               => UnknownUpdateHandlerAsync(update)
         });
     }
@@ -53,10 +49,6 @@ public class UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger
         {
             Commands.MOVIES => GetMoviesData(msg),
             Commands.LOCATION => GetLocation(msg),
-            // "/inline_buttons" => SendInlineKeyboard(msg), //todo need this for location
-            // "/keyboard" => SendReplyKeyboard(msg),
-            // "/request" => RequestLocation(msg), //todo need this for location (maybe)
-            // "/inline_mode" => StartInlineQuery(msg),
             _ => Usage(msg)
         });
         logger.LogInformation("The message was sent with id: {SentMessageId}", sentMessage.Id);

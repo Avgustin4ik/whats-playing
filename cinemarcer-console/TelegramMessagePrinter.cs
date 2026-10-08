@@ -25,7 +25,7 @@ public static class TelegramMessagePrinter
                     .ToList()
             })
             .ToList();
-
+        Console.WriteLine($"Number of movies {movies.Count()} ");
         if (sections.Count == 0) return "No movies nearby today.";
 
         var sb = new StringBuilder();
