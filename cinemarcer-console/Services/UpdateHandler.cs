@@ -85,14 +85,8 @@ public class UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger
         }
         var stopwatch = new Stopwatch();
         stopwatch.Start();
-        var moviesInLocation = showtimeAggregator.GetMoviesInLocation(location);
         // todo достаем запрос из кеша по геолокации
-<<<<<<< Updated upstream
-        var enumerable = showtimeAggregator.Aggregate(moviesInLocation);
-        var message = TelegramMessagePrinter.Format(enumerable, location);
-        /// присылаем пользователю результат
-        return await bot.SendMessage(msg.Chat, message, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
-=======
+        var moviesInLocation = showtimeAggregator.GetMoviesInLocation(location);
         logger.Log(LogLevel.Information, $"[StopWatch] showtimeAggregator.GetMoviesInLocation --- {stopwatch.ElapsedMilliseconds}");
         stopwatch.Restart();
         var enumerable = showtimeAggregator.Aggregate(moviesInLocation); //todo ускорить надо здесь
@@ -132,7 +126,6 @@ public class UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger
         {
             logger.LogError(e, "Problem with sending posters");
         }
->>>>>>> Stashed changes
     }
 
     private bool UserLocationIsKnown(out string s)

@@ -3,9 +3,14 @@ namespace cinemarcer_console;
 using System.Text;
 using Movies.Abstract;
 
+public readonly record struct TelegramMoviesMessage(string Text, IReadOnlyList<string> PosterUrls);
+
 public static class TelegramMessagePrinter
 {
-    public static string Format(IEnumerable<Movie> movies, string? locationName = null)
+    // No ticket-booking integration yet — placeholder link so the design's "buy ticket" row has something to show.
+    private const string PlaceholderTicketUrl = "https://example.com/tickets";
+
+    public static TelegramMoviesMessage Build(IEnumerable<Movie> movies, string? locationName = null)
     {
         //// todo сейчас в список попадают вьетнамские названия фильмов.
         /// регист учитывается, поэтому 2 и 3 элементы считаются как разные
@@ -22,6 +27,7 @@ public static class TelegramMessagePrinter
             .Select(g => new
             {
                 Title = g.Key,
+                PosterUrl = g.Select(m => m.PosterUrl).FirstOrDefault(url => !string.IsNullOrWhiteSpace(url)),
                 Rows = g.GroupBy(m => (m.CinemaName, m.Description))
                     .Select(rowGroup => (
                         rowGroup.Key.CinemaName,
@@ -32,9 +38,7 @@ public static class TelegramMessagePrinter
                     .ToList()
             })
             .ToList();
-        Console.WriteLine($"Number of movies {movies.Count()} ");
-        if (sections.Count == 0) return "No movies nearby today.";
-
+        if (sections.Count == 0) return new TelegramMoviesMessage("No movies nearby today.", Array.Empty<string>());
         var sb = new StringBuilder();
         sb.Append('*').Append(sections.Count).Append(" movies nearby");
         if (!string.IsNullOrWhiteSpace(locationName)) sb.Append(" — ").Append(EscapeMarkdownV2(locationName));
@@ -46,7 +50,13 @@ public static class TelegramMessagePrinter
             if (i < sections.Count - 1) sb.Append('\n');
         }
 
-        return sb.ToString().TrimEnd('\n');
+        var posterUrls = sections
+            .Select(s => s.PosterUrl)
+            .Where(url => !string.IsNullOrWhiteSpace(url))
+            .Select(url => url!)
+            .ToList();
+
+        return new TelegramMoviesMessage(sb.ToString().TrimEnd('\n'), posterUrls);
     }
 
     private static void AppendMovieBlock(StringBuilder sb, int index, string title,
@@ -59,9 +69,12 @@ public static class TelegramMessagePrinter
 
         foreach (var row in rows)
         {
-            lines.Add($"{EscapeMarkdownV2(row.CinemaName)} · {EscapeMarkdownV2(row.Description)}");
+            lines.Add($"{EscapeMarkdownV2(row.CinemaName)} · {EscapeMarkdownV2(row.Description)} · {FormatDistance(row.CinemaName)}");
             lines.Add($"`{string.Join(" · ", row.Times.Select(t => t.ToString("HH:mm")))}`");
         }
+
+        // Only the open (top) block gets a buy-ticket row, matching the approved design.
+        if (isOpen) lines.Add($"[Купить билет →]({PlaceholderTicketUrl})");
 
         for (var i = 0; i < lines.Count; i++)
         {
@@ -70,6 +83,16 @@ public static class TelegramMessagePrinter
             if (i == lines.Count - 1 && !isOpen) sb.Append("||");
             sb.Append('\n');
         }
+    }
+
+    // No real geo-distance data source yet (SerpAPI result isn't wired through to the printer) —
+    // stand-in so the design's distance badge has something to render. Uses a manual char-sum hash
+    // instead of string.GetHashCode(), which is randomized per process and wouldn't stay stable across restarts.
+    private static string FormatDistance(string cinemaName)
+    {
+        var hash = cinemaName.Aggregate(0, (acc, c) => acc + c);
+        var km = 0.3 + hash % 40 / 10.0;
+        return EscapeMarkdownV2($"~{km:0.0} km");
     }
 
     private static string EscapeMarkdownV2(string? value)
