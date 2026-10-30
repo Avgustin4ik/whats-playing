@@ -40,7 +40,7 @@ public class GalaxyCinemaConvertor : IConvertor
         var json = await response.Content.ReadAsStringAsync();
         var root = JObject.Parse(json);
         _sessions = (JArray)root["data"]!["result"]!;
-        return _sessions; //todo мы должны вернуть только "локальные кинотеатры
+        return _sessions; //todo мы должны вернуть только "локальные кинотеатры"
     }
 
     public Movie[] Convert(IGrouping<string?, JToken> json)

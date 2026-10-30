@@ -38,45 +38,10 @@ var host = Host.CreateDefaultBuilder(args)
     })
     .Build();
 
-// services.AddScoped<ShowtimeAggregator>();
+//todo inject
 ScrapperStrategy.Register(new GalaxyCinemaConvertor());
 ScrapperStrategy.Register(new CgvCinemaConvertor());
 ScrapperStrategy.Register(new LotteCinemaConvertor());
 ScrapperStrategy.Register(new BetaCinemaConvertor());
-await host.RunAsync();
 
-// const string locationName = "Nha Trang"; //todo (позже) перевод локации по названию в координаты https://developers.google.com/maps/documentation/geocoding/guides-v3/overview?hl=ru
-// const string location = "@12.240994,109.196397,15.1z";
-// var serpApiKey = config["SerpApiKey"];
-// Hashtable ht = new Hashtable();
-// ht.Add("engine", "google_maps");
-// ht.Add("q", "cinema");
-// ht.Add("ll", location);
-// ht.Add("type", "search"); 
-// //todo add distance in request
-// const string MOVIE_THEATER = "Movie theater";
-// const string CINEMA_NAME = "Galaxy";//for test
-// try
-// {
-//     var search = new GoogleSearch(ht, serpApiKey);
-//     var data = search.GetJson();
-//     var localTheaters = data["local_results"].Where(x => x["type"]?.ToString() == MOVIE_THEATER);
-//     foreach (var theater in localTheaters.Select(x => (x.Value<string>("title"), x.Value<string>("website"))))
-//     {
-//         Console.WriteLine($"{theater.Item1} --- {theater.Item2}");
-//     }
-//     var result = ShowtimeAggregator.Aggregate(localTheaters);
-//     foreach (var theater in result)
-//     {
-//         Console.WriteLine(theater.ToString());
-//     }
-//     var filename =  "./example_data/result.md";
-//     MdPrinter.Print(result, filename);
-//     Console.ReadLine();
-// }
-//
-// catch (SerpApiSearchException ex)
-// {
-//     Console.WriteLine("Exception:");
-//     Console.WriteLine(ex.ToString());
-// }
+await host.RunAsync();

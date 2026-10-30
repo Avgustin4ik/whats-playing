@@ -7,10 +7,17 @@ public static class TelegramMessagePrinter
 {
     public static string Format(IEnumerable<Movie> movies, string? locationName = null)
     {
+        //// todo сейчас в список попадают вьетнамские названия фильмов.
+        /// регист учитывается, поэтому 2 и 3 элементы считаются как разные
+        /// один и тот же фильмо может быть записан с вьетнамским и международным (английским) названием.
+        /// например 2-3-8
+        /// todo вероятно стоит сразу привести фильмы к международным названиям.
+        /// todo нужно оптимизировать. работает очень долго
         var today = DateTime.Today;
         var sections = movies
             .Where(m => m.ShowDateTime.Date == today)
             .GroupBy(m => m.Title)
+            .Distinct()
             .OrderBy(g => g.Key, StringComparer.InvariantCulture)
             .Select(g => new
             {

@@ -1,5 +1,6 @@
 namespace cinemarcer_console.Services;
 
+using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Movies;
 using Telegram.Bot;
@@ -82,13 +83,56 @@ public class UpdateHandler(ITelegramBotClient bot, ILogger<UpdateHandler> logger
         {
             throw new ShowtimeAggregator.UnknownLocationException();
         }
-
+        var stopwatch = new Stopwatch();
+        stopwatch.Start();
         var moviesInLocation = showtimeAggregator.GetMoviesInLocation(location);
         // todo достаем запрос из кеша по геолокации
+<<<<<<< Updated upstream
         var enumerable = showtimeAggregator.Aggregate(moviesInLocation);
         var message = TelegramMessagePrinter.Format(enumerable, location);
         /// присылаем пользователю результат
         return await bot.SendMessage(msg.Chat, message, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
+=======
+        logger.Log(LogLevel.Information, $"[StopWatch] showtimeAggregator.GetMoviesInLocation --- {stopwatch.ElapsedMilliseconds}");
+        stopwatch.Restart();
+        var enumerable = showtimeAggregator.Aggregate(moviesInLocation); //todo ускорить надо здесь
+        logger.Log(LogLevel.Information, $"[StopWatch] showtimeAggregator.Aggregate --- {stopwatch.ElapsedMilliseconds}");
+        stopwatch.Restart();
+        var result = TelegramMessagePrinter.Build(enumerable, location);
+        logger.Log(LogLevel.Information, $"[StopWatch] TelegramMessagePrinter.Build --- {stopwatch.ElapsedMilliseconds}");
+        stopwatch.Restart();
+        await SendPosters(msg.Chat, result.PosterUrls);
+        logger.Log(LogLevel.Information, $"[StopWatch] SendPosters --- {stopwatch.ElapsedMilliseconds}");
+        stopwatch.Restart();
+        Task<Message> messageTask = bot.SendMessage(msg.Chat, result.Text, parseMode: ParseMode.MarkdownV2,
+            replyMarkup: new ReplyKeyboardRemove());
+        var message = await messageTask;
+        logger.Log(LogLevel.Information, $"[StopWatch] bot.SendMessage --- {stopwatch.ElapsedMilliseconds}");
+        stopwatch.Stop();
+        /// присылаем пользователю результат.
+        return message;
+    }
+
+    private async Task SendPosters(Chat chat, IReadOnlyList<string> posterUrls)
+    {
+        if (posterUrls.Count == 0) return;
+
+        try
+        {
+            // sendMediaGroup caps out at 10 photos per call, so split into multiple albums when there are more.
+            foreach (var chunk in posterUrls.Chunk(10))
+            {
+                if (chunk.Length == 1)
+                    await bot.SendPhoto(chat, InputFile.FromUri(chunk[0]));
+                else
+                    await bot.SendMediaGroup(chat, chunk.Select(url => new InputMediaPhoto(InputFile.FromUri(url))));
+            }
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Problem with sending posters");
+        }
+>>>>>>> Stashed changes
     }
 
     private bool UserLocationIsKnown(out string s)

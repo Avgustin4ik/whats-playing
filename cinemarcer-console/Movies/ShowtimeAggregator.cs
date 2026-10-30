@@ -48,7 +48,6 @@ public class ShowtimeAggregator(IConfiguration config)
         {
             Console.WriteLine($"{theater.Item1} --- {theater.Item2}");
         }
-
         return localTheaters;
     }
     
